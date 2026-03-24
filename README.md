@@ -23,3 +23,6 @@ npm i
 # Step 2: Start the development server
 npm run dev
 ```
+
+// Minor formatting update
+

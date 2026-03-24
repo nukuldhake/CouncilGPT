@@ -24,3 +24,6 @@ export default tseslint.config(
     },
   },
 );
+
+// Minor formatting update
+

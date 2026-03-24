@@ -347,3 +347,5 @@ async def debate_full(req: DebateRequest):
 @app.get("/health")
 def health_check():
     return {"status": "ok", "agents": list(AGENTS.keys()), "model": "qwen2.5:3b", "num_ctx": 2048}
+// Minor formatting update
+

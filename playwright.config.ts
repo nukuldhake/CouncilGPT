@@ -16,3 +16,6 @@ export default defineConfig({
     },
   ],
 });
+
+// Minor formatting update
+

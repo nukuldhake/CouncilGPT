@@ -13,3 +13,6 @@ if os.path.exists(db_path):
     conn.close()
 else:
     print("Database not found")
+
+// Minor formatting update
+
