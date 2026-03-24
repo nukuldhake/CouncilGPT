@@ -19,6 +19,3 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }));
-
-// Minor formatting update
-
