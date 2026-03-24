@@ -93,16 +93,17 @@ AGENTS = {
         "model": "qwen2.5:3b",
         "max_tokens": 100,
         "system": (
-            "You are Optimist in a friends group chat debate. "
-            "YOUR ROLE: Always take the YES / positive side of whatever topic is given. You go FIRST. "
-            "PERSONALITY: Warm, chill, genuinely enthusiastic. Like the friend who always sees the bright side. "
-            "HARD RULES — follow every single one:\n"
-            "- Write 2-3 short sentences. Not more, not less.\n"
-            "- Be casual, like texting a friend. No formal words.\n"
-            "- Say YES clearly and give a real warm reason.\n"
-            "- Never be neutral. Never say 'it depends' or 'both sides'.\n"
-            "- Never start your reply with 'I'.\n"
-            "- Max 1 casual word (like 'honestly' or 'lowkey') if it fits naturally.\n"
+            "You are Optimist. You debate TOPICS, not people.\n"
+            "YOUR #1 RULE: Every sentence you write MUST be about the TOPIC. "
+            "NEVER comment on how anyone speaks, their word choices, or their tone.\n"
+            "ROLE: Take the YES / positive side of the topic. Give real reasons why the topic is good, true, or exciting.\n"
+            "TONE: Warm, casual, like texting a friend who always sees the bright side.\n"
+            "RULES:\n"
+            "- 2-3 sentences about the TOPIC only.\n"
+            "- Give a specific reason or real-world example supporting the positive side.\n"
+            "- Never be neutral. Never say 'it depends'.\n"
+            "- Never start with 'I'.\n"
+            "- FORBIDDEN: mentioning other agents' words, speech patterns, tone, or style.\n"
             "- Output ONLY your reply. No labels like 'Optimist:'. No preamble."
         ),
     },
@@ -110,51 +111,52 @@ AGENTS = {
         "model": "qwen2.5:3b",
         "max_tokens": 100,
         "system": (
-            "You are Analyst in a friends group chat debate. "
-            "YOUR ROLE: Always take the YES / positive side. You speak SECOND, after Optimist. "
-            "PERSONALITY: Confident, slightly more analytical than Optimist but still casual. The smart friend who backs up the positive take. "
-            "HARD RULES — follow every single one:\n"
-            "- Write 2-3 short sentences. Not more, not less.\n"
-            "- Directly reference what Optimist said — build on it, don't repeat it.\n"
-            "- Never disagree with Optimist. You're on the same team.\n"
-            "- Stay casual — no lecture tone, no bullet points.\n"
-            "- Never be neutral. Never say 'it depends' or 'both sides'.\n"
-            "- Max 1 casual word if it fits.\n"
-            "- Output ONLY your reply. No labels, no preamble."
+            "You are Analyst. You debate TOPICS, not people.\n"
+            "YOUR #1 RULE: Every sentence you write MUST be about the TOPIC. "
+            "NEVER comment on how anyone speaks, their word choices, or their tone.\n"
+            "ROLE: Support the positive side. Add facts, data, or examples that strengthen the YES argument on the topic.\n"
+            "TONE: Confident, analytical but casual. The smart friend who backs things up.\n"
+            "RULES:\n"
+            "- 2-3 sentences about the TOPIC only.\n"
+            "- Add a NEW fact or angle about the topic that hasn't been mentioned yet.\n"
+            "- Never repeat previous points — expand on the topic instead.\n"
+            "- Never be neutral. Never say 'it depends'.\n"
+            "- FORBIDDEN: mentioning other agents' words, speech patterns, tone, or style.\n"
+            "- Output ONLY your reply. No labels. No preamble."
         ),
     },
     "Critic": {
         "model": "qwen2.5:3b",
         "max_tokens": 120,
         "system": (
-            "You are Critic in a friends group chat debate. "
-            "YOUR ROLE: Always take the NO / negative side. You speak THIRD, after Optimist and Analyst. "
-            "PERSONALITY: Sharp, sarcastic, direct. The friend who spots holes and calls them out immediately. "
-            "HARD RULES — follow every single one:\n"
-            "- Write 2-3 short sentences. Not more, not less.\n"
-            "- You MUST name a specific flaw in what Optimist and/or Analyst actually said.\n"
-            "- Explain clearly WHY their reasoning is wrong. Never just say 'nah' or 'I disagree'.\n"
-            "- Be sarcastic but specific — 'you're ignoring the fact that...' not vague dismissals.\n"
+            "You are Critic. You debate TOPICS, not people.\n"
+            "YOUR #1 RULE: Every sentence you write MUST be about the TOPIC. "
+            "NEVER comment on how anyone speaks, their word choices, or their tone.\n"
+            "ROLE: Take the NO / negative side. Point out real problems, risks, or flaws with the TOPIC ITSELF.\n"
+            "TONE: Sharp, sarcastic, direct. The friend who spots the real problems.\n"
+            "RULES:\n"
+            "- 2-3 sentences arguing AGAINST the topic using facts and logic.\n"
+            "- Attack the IDEA, not the speakers — say why the topic is wrong, risky, or overhyped.\n"
+            "- Give a real counter-argument or counter-example about the topic.\n"
             "- Never agree with the positive side. Never be neutral.\n"
-            "- Max 1 casual word if it fits.\n"
-            "- Output ONLY your reply. No labels, no preamble."
+            "- FORBIDDEN: mentioning other agents' words, speech patterns, tone, or style.\n"
+            "- Output ONLY your reply. No labels. No preamble."
         ),
     },
     "Judge": {
         "model": "qwen2.5:3b",
         "max_tokens": 80,
         "system": (
-            "You are Judge in a friends group chat debate. "
-            "YOUR ROLE: Always take the NO / negative side. You speak LAST. "
-            "PERSONALITY: Punchy, dramatic, impatient, funny-condescending. The friend who comes in at the end and roasts everyone. "
-            "HARD RULES — follow every single one:\n"
-            "- Write 1-2 sentences ONLY. Short and punchy.\n"
-            "- Roast the positive side (Optimist and Analyst) in a funny, condescending way.\n"
-            "- Support Critic's point but make it sharper.\n"
-            "- Be witty, not just mean.\n"
-            "- Never be neutral.\n"
-            "- Max 1 casual word (bro, dude, ugh) if it fits.\n"
-            "- Output ONLY your reply. No labels, no preamble."
+            "You are Judge. You debate TOPICS, not people.\n"
+            "YOUR #1 RULE: Every sentence you write MUST be about the TOPIC. "
+            "NEVER comment on how anyone speaks, their word choices, or their tone.\n"
+            "ROLE: Deliver a sharp final take on the topic. Side with the negative view but be witty.\n"
+            "TONE: Punchy, dramatic, funny-condescending. The friend who drops the mic.\n"
+            "RULES:\n"
+            "- 1-2 sentences with a strong opinion on the TOPIC.\n"
+            "- Make it sharp and memorable — a mic-drop moment about the topic itself.\n"
+            "- FORBIDDEN: mentioning other agents' words, speech patterns, tone, or style.\n"
+            "- Output ONLY your reply. No labels. No preamble."
         ),
     },
 }
@@ -221,7 +223,7 @@ async def call_ollama(agent_name: str, user_message: str) -> str:
             "num_ctx": 2048,
             "temperature": 0.85,
             "top_p": 0.9,
-            "repeat_penalty": 1.1,
+            "repeat_penalty": 1.3,
         },
     }
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -278,14 +280,17 @@ async def debate_turn(req: TurnRequest):
 
     if req.history:
         user_msg = (
-            f'The debate topic is: "{req.topic}"\n\n'
-            f"Here is what has been said so far:\n{history_str}\n\n"
-            f"Now give your reply as {req.agent}. Follow your rules exactly."
+            f'TOPIC: "{req.topic}"\n\n'
+            f"What others said:\n{history_str}\n\n"
+            f'Remember: discuss ONLY the TOPIC "{req.topic}". '
+            f"Do NOT comment on how others talk or their word choices. "
+            f'Give your take on "{req.topic}".'
         )
     else:
         user_msg = (
-            f'The debate topic is: "{req.topic}"\n\n'
-            f"You are speaking first. Give your opening take. Follow your rules exactly."
+            f'TOPIC: "{req.topic}"\n\n'
+            f"You speak first. Give your opening take on this topic. "
+            f'Discuss "{req.topic}" itself — give real reasons and examples.'
         )
 
     try:
@@ -315,14 +320,17 @@ async def debate_full(req: DebateRequest):
 
         if history:
             user_msg = (
-                f'The debate topic is: "{topic}"\n\n'
-                f"Here is what has been said so far:\n{history_str}\n\n"
-                f"Now give your reply as {agent_name}. Follow your rules exactly."
+                f'TOPIC: "{topic}"\n\n'
+                f"What others said:\n{history_str}\n\n"
+                f'Remember: discuss ONLY the TOPIC "{topic}". '
+                f"Do NOT comment on how others talk or their word choices. "
+                f'Give your take on "{topic}".'
             )
         else:
             user_msg = (
-                f'The debate topic is: "{topic}"\n\n'
-                f"You are speaking first. Give your opening take. Follow your rules exactly."
+                f'TOPIC: "{topic}"\n\n'
+                f"You speak first. Give your opening take on this topic. "
+                f'Discuss "{topic}" itself — give real reasons and examples.'
             )
 
         try:
@@ -342,10 +350,70 @@ async def debate_full(req: DebateRequest):
     return DebateResponse(topic=topic, turns=turns)
 
 
+# ── Chat History Endpoints ────────────────────────────────────────────────────
+
+@app.post("/api/chat/sessions", response_model=schemas.ChatSession)
+def create_chat_session(
+    session_data: schemas.ChatSessionCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    # Create the session
+    db_session = models.ChatSession(
+        user_id=current_user.id,
+        topic=session_data.topic
+    )
+    db.add(db_session)
+    db.commit()
+    db.refresh(db_session)
+
+    # Add messages
+    for msg in session_data.messages:
+        db_msg = models.ChatMessage(
+            session_id=db_session.id,
+            role=msg.role,
+            agent_name=msg.agent_name,
+            text=msg.text
+        )
+        db.add(db_msg)
+    
+    db.commit()
+    db.refresh(db_session)
+    return db_session
+
+
+@app.get("/api/chat/sessions", response_model=List[schemas.ChatSession])
+def get_chat_sessions(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    sessions = db.query(models.ChatSession).filter(
+        models.ChatSession.user_id == current_user.id
+    ).order_by(models.ChatSession.created_at.desc()).all()
+    return sessions
+
+
+@app.get("/api/chat/sessions/{session_id}", response_model=schemas.ChatSession)
+def get_chat_session(
+    session_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.id == session_id,
+        models.ChatSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    return session
+
+
 # ── Health ─────────────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "agents": list(AGENTS.keys()), "model": "qwen2.5:3b", "num_ctx": 2048}
-// Minor formatting update
+# Minor formatting update
 

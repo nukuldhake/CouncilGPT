@@ -19,5 +19,5 @@ def get_db():
     finally:
         db.close()
 
-// Minor formatting update
+# Minor formatting update
 

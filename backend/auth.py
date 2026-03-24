@@ -8,7 +8,6 @@ import models, database
 import bcrypt
 import passlib.handlers.bcrypt
 
-# Fix for passlib/bcrypt incompatibility in newer Python/bcrypt versions
 # 1. passlib expects bcrypt.__about__.__version__ which is missing in recent bcrypt versions
 if not hasattr(bcrypt, "__about__"):
     class BcryptAbout:
@@ -16,16 +15,31 @@ if not hasattr(bcrypt, "__about__"):
             self.__version__ = getattr(bcrypt, "__version__", "4.0.0")
     bcrypt.__about__ = BcryptAbout()
 
-# 2. bcrypt 4.0.0+ enforced 72-byte limit with ValueError instead of silent truncation
-# passlib's internal tests can trigger this. We patch it to truncate manually.
-original_calc_checksum = passlib.handlers.bcrypt.bcrypt._calc_checksum
-def patched_calc_checksum(self, secret):
-    if isinstance(secret, str):
-        secret = secret.encode("utf-8")
-    if len(secret) > 72:
-        secret = secret[:72]
-    return original_calc_checksum(self, secret)
-passlib.handlers.bcrypt.bcrypt._calc_checksum = patched_calc_checksum
+# 2. bcrypt 4.0.0+ enforced 72-byte limit with ValueError instead of silent truncation.
+# We patch the internal _BcryptBackend because passlib's internal startup tests (detect_wrap_bug)
+# trigger this even before we call our own functions.
+try:
+    original_calc_checksum = passlib.handlers.bcrypt._BcryptBackend._calc_checksum
+    def patched_calc_checksum(self, secret):
+        if isinstance(secret, str):
+            secret = secret.encode("utf-8")
+        if len(secret) > 72:
+            secret = secret[:72]
+        return original_calc_checksum(self, secret)
+    passlib.handlers.bcrypt._BcryptBackend._calc_checksum = patched_calc_checksum
+except Exception:
+    pass
+
+# BCrypt has a 72-character limit for passwords. We truncate here to ensure consistency and avoid errors.
+def get_password_hash(password):
+    if len(password) > 72:
+        password = password[:72]
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    if len(plain_password) > 72:
+        plain_password = plain_password[:72]
+    return pwd_context.verify(plain_password, hashed_password)
 
 # Security configuration
 SECRET_KEY = "my-super-secret-secret" # In production, use environment variable
@@ -35,11 +49,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
+# Handled above with truncation
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -69,5 +79,5 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-// Minor formatting update
+# Minor formatting update
 
