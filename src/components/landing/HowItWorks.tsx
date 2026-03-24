@@ -88,3 +88,6 @@ const HowItWorks = () => {
 };
 
 export default HowItWorks;
+
+# Minor formatting update
+
