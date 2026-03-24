@@ -13,6 +13,15 @@ import Terms from "./pages/Terms";
 import Documentation from "./pages/Documentation";
 import AgentPersonas from "./pages/AgentPersonas";
 import ApiReference from "./pages/ApiReference";
+import { Navigate } from "react-router-dom";
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -26,7 +35,14 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/workspace" element={<Workspace />} />
+          <Route 
+            path="/workspace" 
+            element={
+              <ProtectedRoute>
+                <Workspace />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/docs" element={<Documentation />} />

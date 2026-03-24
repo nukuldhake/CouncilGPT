@@ -1,11 +1,6 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Plus, MessageSquare, Brain, PanelLeftClose, Settings, LogOut, User as UserIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { api } from "@/lib/api";
+import { useEffect } from "react";
 
 const debates = [
   { id: 1, title: "AI tutoring startup viability", active: true },
@@ -17,21 +12,53 @@ const debates = [
 interface Props {
   open: boolean;
   onToggle: () => void;
+  activeSessionId: number | null;
+  onSelectSession: (id: number | null) => void;
 }
 
-const DebateSidebar = ({ open, onToggle }: Props) => {
-  const [activeId, setActiveId] = useState(1);
-  const [debateList, setDebateList] = useState(debates);
+const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Props) => {
+  const [debateList, setDebateList] = useState<any[]>([]);
   const [newPrompt, setNewPrompt] = useState("");
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState("user@example.com");
+
+  useEffect(() => {
+    fetchHistory();
+    fetchUser();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await api.get("/api/chat/sessions");
+      if (res.ok) {
+        const data = await res.json();
+        setDebateList(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUserEmail(data.email);
+      }
+    } catch (err) {
+      console.error("Failed to fetch user:", err);
+    }
+  };
 
   const startNewDebate = () => {
-    if (!newPrompt.trim()) return;
-    const newId = debateList.length + 1;
-    setDebateList([{ id: newId, title: newPrompt, active: false }, ...debateList]);
-    setActiveId(newId);
-    setNewPrompt("");
+    onSelectSession(null);
     setIsNewDialogOpen(false);
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
   };
 
   return (
@@ -95,13 +122,13 @@ const DebateSidebar = ({ open, onToggle }: Props) => {
           {debateList.map((d) => (
             <button
               key={d.id}
-              onClick={() => setActiveId(d.id)}
+              onClick={() => onSelectSession(d.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm transition-colors ${
-                activeId === d.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                activeSessionId === d.id ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{d.title}</span>
+              <span className="truncate">{d.topic}</span>
             </button>
           ))}
         </div>
@@ -130,7 +157,7 @@ const DebateSidebar = ({ open, onToggle }: Props) => {
                     </div>
                     <div>
                       <p className="text-sm font-medium">User Profile</p>
-                      <p className="text-xs text-muted-foreground">user@example.com</p>
+                      <p className="text-xs text-muted-foreground">{userEmail}</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm">Edit</Button>
@@ -140,11 +167,13 @@ const DebateSidebar = ({ open, onToggle }: Props) => {
                   <Button variant="outline" className="w-full justify-start font-normal">
                     <Settings className="w-4 h-4 mr-2" /> Adjust AI Confidence Threshold
                   </Button>
-                  <Link to="/login" className="w-full">
-                    <Button variant="destructive" className="w-full justify-start font-normal mt-2">
-                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start font-normal mt-2"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                  </Button>
                 </div>
               </div>
             </DialogContent>
