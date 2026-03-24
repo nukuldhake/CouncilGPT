@@ -1,6 +1,12 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Plus, MessageSquare, Brain, PanelLeftClose, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { useEffect } from "react";
 
 const debates = [
   { id: 1, title: "AI tutoring startup viability", active: true },
@@ -16,8 +22,8 @@ interface Props {
   onSelectSession: (id: number | null) => void;
 }
 
-const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Props) => {
-  const [debateList, setDebateList] = useState<any[]>([]);
+const ChatSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Props) => {
+  const [chatList, setChatList] = useState<any[]>([]);
   const [newPrompt, setNewPrompt] = useState("");
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [userEmail, setUserEmail] = useState("user@example.com");
@@ -32,7 +38,7 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
       const res = await api.get("/api/chat/sessions");
       if (res.ok) {
         const data = await res.json();
-        setDebateList(data);
+        setChatList(data);
       }
     } catch (err) {
       console.error("Failed to fetch history:", err);
@@ -51,7 +57,7 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
     }
   };
 
-  const startNewDebate = () => {
+  const startNewChat = () => {
     onSelectSession(null);
     setIsNewDialogOpen(false);
   };
@@ -86,14 +92,14 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
             <DialogTrigger asChild>
               <Button className="w-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 h-9 text-sm" variant="ghost">
                 <Plus className="w-4 h-4 mr-2" />
-                New Debate
+                New Chat
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] glass">
               <DialogHeader>
-                <DialogTitle>Start a New Debate</DialogTitle>
+                <DialogTitle>Start a New Chat</DialogTitle>
                 <DialogDescription>
-                  Enter the problem or decision you want the council to analyze.
+                  Enter the problem or decision you want to discuss with the squad.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -109,8 +115,8 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={startNewDebate} className="bg-primary hover:bg-primary/90">
-                  Convene Council
+                <Button onClick={startNewChat} className="bg-primary hover:bg-primary/90">
+                  Start Chat
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -118,8 +124,8 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
-          <p className="text-xs text-muted-foreground px-2 py-2 font-medium uppercase tracking-wider">History</p>
-          {debateList.map((d) => (
+          <p className="text-xs text-muted-foreground px-2 py-2 font-medium uppercase tracking-wider">Recent Chats</p>
+          {chatList.map((d) => (
             <button
               key={d.id}
               onClick={() => onSelectSession(d.id)}
@@ -185,4 +191,4 @@ const DebateSidebar = ({ open, onToggle, activeSessionId, onSelectSession }: Pro
   );
 };
 
-export default DebateSidebar;
+export default ChatSidebar;

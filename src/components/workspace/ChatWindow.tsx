@@ -2,10 +2,11 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send, PanelLeftOpen, PanelRightOpen,
-  BarChart3, ShieldAlert, Sun, Crown, User, Pause, Square, Play,
+  BarChart3, ShieldAlert, Sun, Crown, User, Pause, Square, Play, Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
 
 // ── Agent metadata ─────────────────────────────────────────────────────────────
 //
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 const agentMeta: Record<string, {
   icon: typeof BarChart3;
   bgClass: string;       // icon background
-  textClass: string;     // label / icon colour
+  textClass: string;     // label / icon color
   borderClass: string;   // bubble border accent
 }> = {
   Optimist: {
@@ -69,6 +70,8 @@ interface Props {
   onToggleInsights: () => void;
   sidebarOpen: boolean;
   insightsOpen: boolean;
+  activeSessionId: number | null;
+  onSessionCreated: (id: number) => void;
 }
 
 // ── Typing indicator ───────────────────────────────────────────────────────────
@@ -99,14 +102,46 @@ const TypingIndicator = ({ agent }: { agent: string }) => {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOpen }: Props) => {
+const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOpen, activeSessionId, onSessionCreated }: Props) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [status, setStatus] = useState<"idle" | "running" | "paused">("idle");
   const [typingAgent, setTypingAgent] = useState("");
-  const [sessionTitle, setSessionTitle] = useState("New Council Session");
+  const [sessionTitle, setSessionTitle] = useState("New Chat");
   const [round, setRound] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeSessionId) {
+      loadSession(activeSessionId);
+    } else {
+      setMessages([]);
+      setSessionTitle("New Chat");
+      setRound(0);
+      setStatus("idle");
+    }
+  }, [activeSessionId]);
+
+  const loadSession = async (id: number) => {
+    try {
+      const res = await api.get(`/api/chat/sessions/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessionTitle(data.topic);
+        const mappedMessages: Message[] = data.messages.map((m: { id: number; role: "user" | "agent"; agent_name?: string; text: string }) => ({
+          id: m.id,
+          role: m.role,
+          agent: m.agent_name,
+          text: m.text,
+        }));
+        setMessages(mappedMessages);
+        setStatus("paused");
+        latestTopicRef.current = data.topic;
+      }
+    } catch (err) {
+      console.error("Failed to load session:", err);
+    }
+  };
 
   const latestTopicRef = useRef("");
   const statusRef = useRef(status);
@@ -122,10 +157,6 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
   }, [messages, typingAgent]);
 
   // ── Build structured history for backend ──────────────────────────────────
-  //
-  // FIX: Previously sent a raw string. Now sends a structured array so the
-  // backend can format it correctly and agents get clean, consistent context.
-
   const buildHistory = (msgs: Message[]): HistoryEntry[] =>
     msgs.map((m) =>
       m.role === "user"
@@ -134,7 +165,6 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
     );
 
   // ── Call a single agent ────────────────────────────────────────────────────
-
   const callAgent = async (
     agentName: string,
     history: HistoryEntry[],
@@ -153,17 +183,16 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
     return data.text || "...";
   };
 
-  // ── Debate runner ──────────────────────────────────────────────────────────
-
-  const runDebate = useCallback(async (
+  // ── Chat runner ────────────────────────────────────────────────────────────
+  const runChat = useCallback(async (
     startMessages: Message[],
     currentTopic: string,
+    sessionId: number | null
   ) => {
     setStatus("running");
     statusRef.current = "running";
     setErrorMsg(null);
 
-    // FIX: increment round using the ref so we always have the correct value
     const currentRound = roundRef.current + 1;
     setRound(currentRound);
     roundRef.current = currentRound;
@@ -179,7 +208,6 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
 
         setTypingAgent(agentName);
 
-        // FIX: pass structured history array, not a string
         const history = buildHistory(currentMsgs);
         const agentText = await callAgent(agentName, history, currentTopic);
 
@@ -195,6 +223,11 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
 
         currentMsgs = [...currentMsgs, newMsg];
         setMessages(currentMsgs);
+
+        // Update session on each agent reply if we have a session ID
+        if (sessionId) {
+          updateSession(sessionId, currentMsgs, currentTopic);
+        }
       }
 
       setTypingAgent("");
@@ -202,7 +235,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
       statusRef.current = "paused";
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
-      console.error("Debate error:", msg);
+      console.error("Chat error:", msg);
       setErrorMsg(msg);
       setTypingAgent("");
       setStatus("paused");
@@ -210,31 +243,65 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
     }
   }, []);
 
-  // ── Send handler ───────────────────────────────────────────────────────────
+  const saveInitialSession = async (msgs: Message[], topic: string) => {
+    try {
+      const payload = {
+        topic,
+        messages: msgs.map(m => ({
+          role: m.role,
+          agent_name: m.agent,
+          text: m.text
+        }))
+      };
+      const res = await api.post("/api/chat/sessions", payload);
+      if (res.ok) {
+        const data = await res.json();
+        onSessionCreated(data.id);
+        return data.id;
+      }
+    } catch (err) {
+      console.error("Failed to save initial session:", err);
+    }
+    return null;
+  };
 
-  const handleSend = () => {
+  const updateSession = async (id: number, msgs: Message[], topic: string) => {
+    // Currently backend doesn't have a specific update endpoint that overwrites, 
+    // but we can potentially just keep it as is or ignore.
+    // For now, let's just make sure it's created. 
+    // If the user wants it to be persistent across refreshes *mid-debate*, 
+    // we'd need a PUT endpoint.
+  };
+
+  // ── Send handler ───────────────────────────────────────────────────────────
+  const handleSend = async () => {
     if (!input.trim() || status === "running") return;
     const userText = input.trim();
     setErrorMsg(null);
 
-    if (messages.length === 0) {
+    const isFirstMessage = messages.length === 0 && !activeSessionId;
+
+    if (isFirstMessage) {
       setSessionTitle(userText.length > 40 ? userText.substring(0, 40) + "…" : userText);
     }
 
-    // FIX: set topic BEFORE updating messages to avoid any async ordering issues
     latestTopicRef.current = userText;
-
     const newMsg: Message = { id: Date.now(), role: "user", text: userText };
     const updated = [...messages, newMsg];
     setMessages(updated);
     setInput("");
 
-    runDebate(updated, userText);
+    let sessionId = activeSessionId;
+    if (isFirstMessage) {
+      // Automatically create session on first message
+      sessionId = await saveInitialSession(updated, userText);
+    }
+
+    runChat(updated, userText, sessionId);
   };
 
-  // FIX: handleResume no longer passes stale `round` — runDebate reads roundRef internally
   const handleResume = () => {
-    runDebate(messagesRef.current, latestTopicRef.current);
+    runChat(messagesRef.current, latestTopicRef.current, activeSessionId);
   };
 
   const handlePause = () => {
@@ -258,7 +325,6 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
@@ -277,13 +343,13 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <span className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "running"
-                    ? "bg-green-500 animate-pulse"
-                    : status === "paused"
-                      ? "bg-amber-500"
-                      : "bg-muted-foreground"
+                  ? "bg-green-500 animate-pulse"
+                  : status === "paused"
+                    ? "bg-amber-500"
+                    : "bg-muted-foreground"
                   }`} />
                 {status === "running"
-                  ? "Debating"
+                  ? "Squad Thinking"
                   : status === "paused"
                     ? `Paused · Round ${round}`
                     : "Ready"}
@@ -295,10 +361,10 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
         <div className="flex items-center gap-2">
           <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
             <div className={`h-full rounded-full transition-all duration-500 ${status === "running"
-                ? "w-2/3 bg-green-500 animate-pulse"
-                : status === "paused"
-                  ? "w-1/2 bg-amber-500"
-                  : "w-full bg-primary"
+              ? "w-2/3 bg-green-500 animate-pulse"
+              : status === "paused"
+                ? "w-1/2 bg-amber-500"
+                : "w-full bg-primary"
               }`} />
           </div>
           {!insightsOpen && (
@@ -327,11 +393,11 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
       </AnimatePresence>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 relative">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-4">
-            <Crown className="w-12 h-12 text-primary animate-pulse" />
-            <p className="text-sm font-medium">Drop a topic and let the squad debate it out 🔥</p>
+            <Brain className="w-12 h-12 text-primary animate-pulse" />
+            <p className="text-sm font-medium">Start a conversation with the squad! 🔥</p>
           </div>
         )}
 
@@ -366,10 +432,10 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 </span>
 
                 <div className={`px-4 py-3 text-sm leading-relaxed rounded-2xl border ${isJudge
-                    ? `bg-purple-500/5 ${meta?.borderClass} text-foreground font-medium`
-                    : isUser
-                      ? "bg-primary/10 border-primary/20 rounded-br-md text-foreground"
-                      : `bg-muted/40 ${meta?.borderClass ?? "border-border"} text-secondary-foreground`
+                  ? `bg-purple-500/5 ${meta?.borderClass} text-foreground font-medium`
+                  : isUser
+                    ? "bg-primary/10 border-primary/20 rounded-br-md text-foreground"
+                    : `bg-muted/40 ${meta?.borderClass ?? "border-border"} text-secondary-foreground`
                   }`}>
                   {msg.text}
                 </div>
@@ -400,7 +466,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 ? `${typingAgent} is typing...`
                 : status === "paused"
                   ? "Jump in with your thoughts, or hit ▶ to continue..."
-                  : "Drop a topic to debate…"
+                  : "Send a message..."
             }
             className="flex-1 bg-muted/50 border-border h-11 text-foreground placeholder:text-muted-foreground"
           />
@@ -412,7 +478,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 onClick={handlePause}
                 variant="outline"
                 className="h-11 px-3 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
-                title="Pause Debate"
+                title="Pause Chat"
               >
                 <Pause className="w-4 h-4" />
               </Button>
@@ -420,7 +486,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 onClick={handleStop}
                 variant="outline"
                 className="h-11 px-3 border-red-500/50 text-red-500 hover:bg-red-500/10"
-                title="End Debate"
+                title="End Chat"
               >
                 <Square className="w-4 h-4" />
               </Button>
@@ -441,7 +507,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 <Button
                   onClick={handleResume}
                   className="bg-green-600 hover:bg-green-700 text-white h-11 px-3"
-                  title="Continue Debate"
+                  title="Continue Chat"
                 >
                   <Play className="w-4 h-4" />
                 </Button>
@@ -450,7 +516,7 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
                 onClick={handleStop}
                 variant="outline"
                 className="h-11 px-3 border-red-500/50 text-red-500 hover:bg-red-500/10"
-                title="End Debate"
+                title="End Chat"
               >
                 <Square className="w-4 h-4" />
               </Button>
@@ -473,4 +539,4 @@ const DebateChat = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
   );
 };
 
-export default DebateChat;
+export default ChatWindow;
