@@ -89,5 +89,5 @@ const HowItWorks = () => {
 
 export default HowItWorks;
 
-# Minor formatting update
+// Minor formatting update
 

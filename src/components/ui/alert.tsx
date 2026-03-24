@@ -42,5 +42,5 @@ AlertDescription.displayName = "AlertDescription";
 
 export { Alert, AlertTitle, AlertDescription };
 
-# Minor formatting update
+// Minor formatting update
 

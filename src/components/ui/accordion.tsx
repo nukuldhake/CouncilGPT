@@ -51,5 +51,5 @@ AccordionContent.displayName = AccordionPrimitive.Content.displayName;
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
 
-# Minor formatting update
+// Minor formatting update
 

@@ -103,5 +103,5 @@ export {
   AlertDialogCancel,
 };
 
-# Minor formatting update
+// Minor formatting update
 

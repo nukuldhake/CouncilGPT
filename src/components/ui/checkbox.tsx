@@ -25,5 +25,5 @@ Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
 export { Checkbox };
 
-# Minor formatting update
+// Minor formatting update
 

@@ -4,5 +4,5 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-# Minor formatting update
+// Minor formatting update
 

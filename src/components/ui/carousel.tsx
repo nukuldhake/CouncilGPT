@@ -223,5 +223,5 @@ CarouselNext.displayName = "CarouselNext";
 
 export { type CarouselApi, Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext };
 
-# Minor formatting update
+// Minor formatting update
 

@@ -1,4 +1,4 @@
 /// <reference types="vite/client" />
 
-# Minor formatting update
+// Minor formatting update
 

@@ -8,5 +8,5 @@ const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent;
 
 export { Collapsible, CollapsibleTrigger, CollapsibleContent };
 
-# Minor formatting update
+// Minor formatting update
 

@@ -94,5 +94,5 @@ export {
   DialogDescription,
 };
 
-# Minor formatting update
+// Minor formatting update
 

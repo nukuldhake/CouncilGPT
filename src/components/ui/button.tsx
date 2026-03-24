@@ -46,5 +46,5 @@ Button.displayName = "Button";
 
 export { Button, buttonVariants };
 
-# Minor formatting update
+// Minor formatting update
 

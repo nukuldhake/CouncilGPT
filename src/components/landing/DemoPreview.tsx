@@ -103,5 +103,5 @@ const DemoPreview = () => (
 
 export default DemoPreview;
 
-# Minor formatting update
+// Minor formatting update
 

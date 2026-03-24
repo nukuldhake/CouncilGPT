@@ -4,5 +4,5 @@ const AspectRatio = AspectRatioPrimitive.Root;
 
 export { AspectRatio };
 
-# Minor formatting update
+// Minor formatting update
 

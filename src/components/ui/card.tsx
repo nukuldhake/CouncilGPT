@@ -42,5 +42,5 @@ CardFooter.displayName = "CardFooter";
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
 
-# Minor formatting update
+// Minor formatting update
 

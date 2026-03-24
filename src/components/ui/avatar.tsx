@@ -37,5 +37,5 @@ AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
 export { Avatar, AvatarImage, AvatarFallback };
 
-# Minor formatting update
+// Minor formatting update
 

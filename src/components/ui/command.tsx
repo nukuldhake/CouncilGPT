@@ -131,5 +131,5 @@ export {
   CommandSeparator,
 };
 
-# Minor formatting update
+// Minor formatting update
 

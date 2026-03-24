@@ -53,5 +53,5 @@ Calendar.displayName = "Calendar";
 
 export { Calendar };
 
-# Minor formatting update
+// Minor formatting update
 
