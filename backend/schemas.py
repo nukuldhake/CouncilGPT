@@ -45,6 +45,9 @@ class ChatSessionBase(BaseModel):
 class ChatSessionCreate(ChatSessionBase):
     messages: List[ChatMessageCreate]
 
+class ChatSessionUpdate(BaseModel):
+    topic: str
+
 class ChatSession(ChatSessionBase):
     id: int
     user_id: int

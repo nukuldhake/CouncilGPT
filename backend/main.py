@@ -410,6 +410,46 @@ def get_chat_session(
     return session
 
 
+@app.delete("/api/chat/sessions/{session_id}")
+def delete_chat_session(
+    session_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.id == session_id,
+        models.ChatSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    db.delete(session)
+    db.commit()
+    return {"status": "ok"}
+
+
+@app.put("/api/chat/sessions/{session_id}", response_model=schemas.ChatSession)
+def update_chat_session(
+    session_id: int,
+    session_update: schemas.ChatSessionUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    session = db.query(models.ChatSession).filter(
+        models.ChatSession.id == session_id,
+        models.ChatSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    
+    session.topic = session_update.topic
+    db.commit()
+    db.refresh(session)
+    return session
+
+
 # ── Health ─────────────────────────────────────────────────────────────────────
 
 @app.get("/health")
