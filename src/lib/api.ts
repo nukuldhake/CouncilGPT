@@ -26,9 +26,18 @@ export const authenticatedFetch = async (endpoint: string, options: RequestInit 
 
 export const api = {
   get: (endpoint: string) => authenticatedFetch(endpoint, { method: "GET" }),
-  post: (endpoint: string, body: any) =>
+  post: (endpoint: string, body: unknown) =>
     authenticatedFetch(endpoint, {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+  put: (endpoint: string, body: unknown) =>
+    authenticatedFetch(endpoint, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  delete: (endpoint: string) =>
+    authenticatedFetch(endpoint, {
+      method: "DELETE",
     }),
 };

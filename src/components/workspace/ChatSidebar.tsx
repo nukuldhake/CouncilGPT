@@ -8,12 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 
-const debates = [
-  { id: 1, title: "AI tutoring startup viability", active: true },
-  { id: 2, title: "Remote work policy decision", active: false },
-  { id: 3, title: "Market expansion strategy", active: false },
-  { id: 4, title: "Product pricing model", active: false },
-];
+
 
 interface Props {
   open: boolean;

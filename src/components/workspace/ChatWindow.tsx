@@ -118,8 +118,14 @@ const ChatWindow = ({
   const [round, setRound] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const ignoreNextLoadRef = useRef(false);
+
   useEffect(() => {
     if (activeSessionId) {
+      if (ignoreNextLoadRef.current) {
+        ignoreNextLoadRef.current = false;
+        return;
+      }
       loadSession(activeSessionId);
     } else {
       setMessages([]);
@@ -262,7 +268,7 @@ const ChatWindow = ({
       setStatus("paused");
       statusRef.current = "paused";
     }
-  }, [onAnalysisUpdate, fetchAnalysis, onSessionCreated, buildHistory]);
+  }, [fetchAnalysis, buildHistory]);
 
   const saveInitialSession = async (msgs: Message[], topic: string) => {
     try {
@@ -287,11 +293,17 @@ const ChatWindow = ({
   };
 
   const updateSession = async (id: number, msgs: Message[], topic: string) => {
-    // Currently backend doesn't have a specific update endpoint that overwrites, 
-    // but we can potentially just keep it as is or ignore.
-    // For now, let's just make sure it's created. 
-    // If the user wants it to be persistent across refreshes *mid-debate*, 
-    // we'd need a PUT endpoint.
+    try {
+      const lastMsg = msgs[msgs.length - 1];
+      const payload = {
+        role: lastMsg.role,
+        agent_name: lastMsg.agent,
+        text: lastMsg.text
+      };
+      await api.post(`/api/chat/sessions/${id}/messages`, payload);
+    } catch (err) {
+      console.error("Failed to update session with new message:", err);
+    }
   };
 
   // ── Send handler ───────────────────────────────────────────────────────────
@@ -316,6 +328,7 @@ const ChatWindow = ({
     if (isFirstMessage) {
       // Automatically create session on first message
       sessionId = await saveInitialSession(updated, userText);
+      ignoreNextLoadRef.current = true;
     }
 
     runChat(updated, userText, sessionId);
