@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Send, PanelLeftOpen, PanelRightOpen,
-  BarChart3, ShieldAlert, Sun, Crown, User, Pause, Square, Play, Brain,
-} from "lucide-react";
+import { Send, PanelLeftOpen, PanelRightOpen, BarChart3, ShieldAlert, Sun, Crown, User, Pause, Square, Play, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { DebateAnalysis } from "./InsightsPanel";
 
 // ── Agent metadata ─────────────────────────────────────────────────────────────
 //
@@ -72,6 +70,7 @@ interface Props {
   insightsOpen: boolean;
   activeSessionId: number | null;
   onSessionCreated: (id: number) => void;
+  onAnalysisUpdate?: (analysis: DebateAnalysis) => void;
 }
 
 // ── Typing indicator ───────────────────────────────────────────────────────────
@@ -102,7 +101,15 @@ const TypingIndicator = ({ agent }: { agent: string }) => {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOpen, activeSessionId, onSessionCreated }: Props) => {
+const ChatWindow = ({ 
+  onToggleSidebar, 
+  onToggleInsights, 
+  sidebarOpen, 
+  insightsOpen, 
+  activeSessionId, 
+  onSessionCreated,
+  onAnalysisUpdate 
+}: Props) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [status, setStatus] = useState<"idle" | "running" | "paused">("idle");
@@ -157,12 +164,26 @@ const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
   }, [messages, typingAgent]);
 
   // ── Build structured history for backend ──────────────────────────────────
-  const buildHistory = (msgs: Message[]): HistoryEntry[] =>
+  const buildHistory = useCallback((msgs: Message[]): HistoryEntry[] =>
     msgs.map((m) =>
       m.role === "user"
         ? { role: "user", text: m.text }
         : { agent: m.agent, text: m.text }
-    );
+    ), []);
+
+  const fetchAnalysis = useCallback(async (msgs: Message[], topic: string) => {
+    if (!onAnalysisUpdate) return;
+    try {
+      const history = buildHistory(msgs);
+      const res = await api.post("/api/debate/analyze", { history, topic, agent: "Insight_Analyst" });
+      if (res.ok) {
+        const data = await res.json();
+        onAnalysisUpdate(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch analysis:", err);
+    }
+  }, [onAnalysisUpdate, buildHistory]);
 
   // ── Call a single agent ────────────────────────────────────────────────────
   const callAgent = async (
@@ -170,11 +191,7 @@ const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
     history: HistoryEntry[],
     topic: string,
   ): Promise<string> => {
-    const res = await fetch("http://localhost:8000/api/debate/turn", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent: agentName, history, topic }),
-    });
+    const res = await api.post("/api/debate/turn", { agent: agentName, history, topic });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || `Agent ${agentName} failed (${res.status})`);
@@ -233,6 +250,10 @@ const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
       setTypingAgent("");
       setStatus("paused");
       statusRef.current = "paused";
+
+      // Trigger analysis after full sequence
+      fetchAnalysis(currentMsgs, currentTopic);
+
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       console.error("Chat error:", msg);
@@ -241,7 +262,7 @@ const ChatWindow = ({ onToggleSidebar, onToggleInsights, sidebarOpen, insightsOp
       setStatus("paused");
       statusRef.current = "paused";
     }
-  }, []);
+  }, [onAnalysisUpdate, fetchAnalysis, onSessionCreated, buildHistory]);
 
   const saveInitialSession = async (msgs: Message[], topic: string) => {
     try {

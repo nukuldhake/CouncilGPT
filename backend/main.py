@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import asyncio
 import httpx
 import re
+import json
 from typing import List, Optional
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
@@ -157,6 +158,15 @@ AGENTS = {
             "- Make it sharp and memorable — a mic-drop moment about the topic itself.\n"
             "- FORBIDDEN: mentioning other agents' words, speech patterns, tone, or style.\n"
             "- Output ONLY your reply. No labels. No preamble."
+        ),
+    },
+    "Insight_Analyst": {
+        "model": "qwen2.5:3b",
+        "max_tokens": 500,
+        "system": (
+            "Analyze the debate and output ONLY a JSON object. No preamble, no explanation, no markdown blocks.\n"
+            "Structure: {\"agents\": [{\"name\": \"Optimist\", \"strength\": 70, \"influence\": 25}, ...], \"contradictions\": [{\"a\": \"A\", \"b\": \"B\", \"topic\": \"X\"}]}.\n"
+            "Use exact names: Optimist, Analyst, Critic, Judge."
         ),
     },
 }
@@ -348,6 +358,44 @@ async def debate_full(req: DebateRequest):
         await asyncio.sleep(0.4)
 
     return DebateResponse(topic=topic, turns=turns)
+
+
+@app.post("/api/debate/analyze", response_model=schemas.DebateAnalysis)
+async def analyze_debate(req: TurnRequest):
+    """
+    Analyzes the debate and return structured insights.
+    Reuses TurnRequest for history and topic.
+    """
+    history_str = build_history_string(req.history)
+    user_msg = (
+        f"Analyze this debate on the topic: '{req.topic}'\n\n"
+        f"Debate History:\n{history_str}\n\n"
+        f"Provide the analysis in the requested JSON format."
+    )
+
+    try:
+        raw = await call_ollama("Insight_Analyst", user_msg)
+        # Clean potential markdown fences
+        json_str = re.sub(r"```json\s*|\s*```", "", raw).strip()
+        data = json.loads(json_str)
+        
+        # Validate structure or fill defaults if missing
+        if "agents" not in data: data["agents"] = []
+        if "contradictions" not in data: data["contradictions"] = []
+        
+        return data
+    except Exception as e:
+        print(f"Analysis error: {e}")
+        # Return something that matches schema but with default values
+        return {
+            "agents": [
+                {"name": "Optimist", "strength": 50, "influence": 25},
+                {"name": "Analyst", "strength": 50, "influence": 25},
+                {"name": "Critic", "strength": 50, "influence": 25},
+                {"name": "Judge", "strength": 50, "influence": 25},
+            ],
+            "contradictions": []
+        }
 
 
 # ── Chat History Endpoints ────────────────────────────────────────────────────

@@ -1,23 +1,37 @@
 import { motion } from "framer-motion";
-import { X, BarChart3, ShieldAlert, Sun, Layers } from "lucide-react";
+import { X, BarChart3, ShieldAlert, Sun, Layers, LucideIcon } from "lucide-react";
 
-const agents = [
-  { name: "Analyst", icon: BarChart3, color: "agent-analyst", strength: 85, influence: 35 },
-  { name: "Critic", icon: ShieldAlert, color: "agent-critic", strength: 78, influence: 30 },
-  { name: "Optimist", icon: Sun, color: "agent-optimist", strength: 68, influence: 20 },
-  { name: "Synthesizer", icon: Layers, color: "agent-synthesizer", strength: 90, influence: 15 },
-];
+interface AgentScore {
+  name: string;
+  strength: number;
+  influence: number;
+}
 
-const contradictions = [
-  { a: "Analyst", b: "Critic", topic: "Market demand assumptions" },
-  { a: "Optimist", b: "Critic", topic: "Growth vs. regulatory risk" },
-];
+interface Contradiction {
+  a: string;
+  b: string;
+  topic: string;
+}
+
+export interface DebateAnalysis {
+  agents: AgentScore[];
+  contradictions: Contradiction[];
+}
 
 interface Props {
   onClose: () => void;
+  analysis: DebateAnalysis | null;
 }
 
-const InsightsPanel = ({ onClose }: Props) => (
+const agentInfo: Record<string, { icon: LucideIcon; color: string }> = {
+  Optimist: { icon: Sun, color: "agent-optimist" },
+  Analyst: { icon: BarChart3, color: "agent-analyst" },
+  Critic: { icon: ShieldAlert, color: "agent-critic" },
+  Judge: { icon: Layers, color: "agent-synthesizer" },
+  Synthesizer: { icon: Layers, color: "agent-synthesizer" },
+};
+
+const InsightsPanel = ({ onClose, analysis }: Props) => (
   <motion.aside
     className="w-72 h-full border-l border-border bg-sidebar shrink-0 flex flex-col overflow-y-auto"
     initial={{ width: 0, opacity: 0 }}
@@ -32,77 +46,86 @@ const InsightsPanel = ({ onClose }: Props) => (
       </button>
     </div>
 
-    <div className="p-4 space-y-6">
-      {/* Argument Strength */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Argument Strength</p>
-        <div className="space-y-3">
-          {agents.map((a) => (
-            <div key={a.name}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <a.icon className={`w-3 h-3 text-${a.color}`} />
-                  <span className="text-xs text-secondary-foreground">{a.name}</span>
+    {!analysis ? (
+      <div className="p-8 text-center space-y-3 opacity-50">
+        <Layers className="w-8 h-8 mx-auto animate-pulse text-muted-foreground" />
+        <p className="text-xs">Waiting for debate analysis...</p>
+      </div>
+    ) : (
+      <div className="p-4 space-y-6">
+        {/* Argument Strength */}
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Argument Strength</p>
+          <div className="space-y-3">
+            {analysis.agents.map((a) => {
+              const info = agentInfo[a.name] || { icon: Layers, color: "primary" };
+              return (
+                <div key={a.name}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <info.icon className={`w-3 h-3 text-${info.color}`} />
+                      <span className="text-xs text-secondary-foreground">{a.name}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{a.strength}%</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      className={`h-full rounded-full bg-${info.color}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${a.strength}%` }}
+                      transition={{ duration: 0.8 }}
+                    />
+                  </div>
                 </div>
-                <span className="text-xs text-muted-foreground">{a.strength}%</span>
-              </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full bg-${a.color}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${a.strength}%` }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                />
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Contradictions */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contradiction Detection</p>
-        <div className="space-y-2">
-          {contradictions.map((c, i) => (
-            <div key={i} className="glass-subtle p-3 text-xs">
-              <div className="flex items-center gap-1 mb-1">
-                <span className={`text-${agentColor(c.a)}`}>{c.a}</span>
-                <span className="text-muted-foreground">↔</span>
-                <span className={`text-${agentColor(c.b)}`}>{c.b}</span>
-              </div>
-              <p className="text-muted-foreground">{c.topic}</p>
+        {/* Contradictions */}
+        {analysis.contradictions.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Contradiction Detection</p>
+            <div className="space-y-2">
+              {analysis.contradictions.map((c, i) => (
+                <div key={i} className="glass-subtle p-3 text-xs">
+                  <div className="flex items-center gap-1 mb-1">
+                    <span className={`text-${agentColor(c.a)}`}>{c.a}</span>
+                    <span className="text-muted-foreground">↔</span>
+                    <span className={`text-${agentColor(c.b)}`}>{c.b}</span>
+                  </div>
+                  <p className="text-muted-foreground">{c.topic}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Influence */}
-      <div>
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Agent Influence</p>
-        <div className="space-y-2">
-          {agents.map((a) => (
-            <div key={a.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <a.icon className={`w-3 h-3 text-${a.color}`} />
-                <span className="text-xs text-secondary-foreground">{a.name}</span>
-              </div>
-              <span className={`text-xs font-medium text-${a.color}`}>{a.influence}%</span>
-            </div>
-          ))}
+        {/* Influence */}
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Agent Influence</p>
+          <div className="space-y-2">
+            {analysis.agents.map((a) => {
+              const info = agentInfo[a.name] || { icon: Layers, color: "primary" };
+              return (
+                <div key={a.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <info.icon className={`w-3 h-3 text-${info.color}`} />
+                    <span className="text-xs text-secondary-foreground">{a.name}</span>
+                  </div>
+                  <span className={`text-xs font-medium text-${info.color}`}>{a.influence}%</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+    )}
   </motion.aside>
 );
 
 function agentColor(name: string) {
-  const map: Record<string, string> = {
-    Analyst: "agent-analyst",
-    Critic: "agent-critic",
-    Optimist: "agent-optimist",
-    Synthesizer: "agent-synthesizer",
-  };
-  return map[name] || "primary";
+  return agentInfo[name]?.color || "primary";
 }
 
 export default InsightsPanel;

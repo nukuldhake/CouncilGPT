@@ -56,3 +56,17 @@ class ChatSession(ChatSessionBase):
 
     class Config:
         from_attributes = True
+
+class AgentScore(BaseModel):
+    name: str
+    strength: int # 0-100
+    influence: int # percentage
+
+class Contradiction(BaseModel):
+    a: str
+    b: str
+    topic: str
+
+class DebateAnalysis(BaseModel):
+    agents: List[AgentScore]
+    contradictions: List[Contradiction]
