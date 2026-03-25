@@ -116,7 +116,7 @@ npm install
 # Start development server
 npm run dev
 ```
-*The frontend will run on `http://localhost:5173`*
+*The frontend will run on `http://localhost:8080`*
 
 ## 📖 Usage
 1. **Registration**: Create an account to save your debates.
